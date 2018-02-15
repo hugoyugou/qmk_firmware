@@ -91,113 +91,97 @@ const uint16_t PROGMEM fn_actions[] = {
 
 bool is_copied = false;
 
-bool is_numpad_pressed[10][2] = {
-  { false, false },
-  { false, false },
-  { false, false },
-  { false, false },
-  { false, false },
-  { false, false },
-  { false, false },
-  { false, false },
-  { false, false },
-  { false, false }
-};
+#define INIT_NUMPAD(MC_KEY) bool is_ ## MC_KEY ## _pressed = false; \
+  bool is_ ## MC_KEY ## _shift_pressed = false;
 
-const bool numpad_shift_diff[10] = {
-  false, false, false, true, false, false, true, true, true, true
-};
+#define CASE_NUMPAD_2(MC_KEY, KEY) case MC_KEY: \
+  if (record->event.pressed) { \
+    if ((keyboard_report->mods & MOD_BIT(KC_LSFT))) { \
+      if (is_ ## MC_KEY ## _pressed) { \
+        SEND_STRING(SS_UP(KEY)); \
+        is_ ## MC_KEY ## _pressed = false; \
+      } \
+    } else { \
+      if (is_ ## MC_KEY ## _shift_pressed) { \
+        is_ ## MC_KEY ## _shift_pressed = false; \
+      } \
+      is_ ## MC_KEY ## _pressed = true; \
+      SEND_STRING(SS_DOWN(KEY)); \
+    } \
+  } else { \
+    if (is_ ## MC_KEY ## _pressed) { \
+      is_ ## MC_KEY ## _pressed = false; \
+      SEND_STRING(SS_UP(KEY)); \
+    } \
+  } \
+  break;
 
-const char* numpad_keymaps[10][2][2] = {
-  {
-    {SS_DOWN(X_KP_0), SS_UP(X_KP_0)}
-  },
-  {
-    {SS_DOWN(X_KP_1), SS_UP(X_KP_1)}
-  },
-  {
-    {SS_DOWN(X_KP_2), SS_UP(X_KP_2)}
-  },
-  {
-    {SS_DOWN(X_KP_3), SS_UP(X_KP_3)},
-    {SS_DOWN(X_KP_ENTER), SS_UP(X_KP_ENTER)}
-  },
-  {
-    {SS_DOWN(X_KP_4), SS_UP(X_KP_4)}
-  },
-  {
-    {SS_DOWN(X_KP_5), SS_UP(X_KP_5)}
-  },
-  {
-    {SS_DOWN(X_KP_6), SS_UP(X_KP_6)},
-    {SS_DOWN(X_KP_PLUS), SS_UP(X_KP_PLUS)}
-  },
-  {
-    {SS_DOWN(X_KP_7), SS_UP(X_KP_7)},
-    {SS_DOWN(X_KP_SLASH), SS_UP(X_KP_SLASH)}
-  },
-  {
-    {SS_DOWN(X_KP_8), SS_UP(X_KP_8)},
-    {SS_DOWN(X_KP_ASTERISK), SS_UP(X_KP_ASTERISK)}
-  },
-  {
-    {SS_DOWN(X_KP_9), SS_UP(X_KP_9)},
-    {SS_DOWN(X_KP_MINUS), SS_UP(X_KP_MINUS)}
-  }
-};
+#define CASE_NUMPAD_3(MC_KEY, KEY, SHIFT_KEY) case MC_KEY: \
+  if (record->event.pressed) { \
+    if ((keyboard_report->mods & MOD_BIT(KC_LSFT))) { \
+      if (is_ ## MC_KEY ## _pressed) { \
+        SEND_STRING(SS_UP(KEY)); \
+        is_ ## MC_KEY ## _pressed = false; \
+      } \
+      is_ ## MC_KEY ## _shift_pressed = true; \
+      SEND_STRING(SS_DOWN(SHIFT_KEY)); \
+    } else { \
+      if (is_ ## MC_KEY ## _shift_pressed) { \
+        SEND_STRING(SS_UP(SHIFT_KEY)); \
+        is_ ## MC_KEY ## _shift_pressed = false; \
+      } \
+      is_ ## MC_KEY ## _pressed = true; \
+      SEND_STRING(SS_DOWN(KEY)); \
+    } \
+  } else { \
+    if (is_ ## MC_KEY ## _shift_pressed) { \
+      is_ ## MC_KEY ## _shift_pressed = false; \
+      SEND_STRING(SS_UP(SHIFT_KEY)); \
+    } \
+    if (is_ ## MC_KEY ## _pressed) { \
+      is_ ## MC_KEY ## _pressed = false; \
+      SEND_STRING(SS_UP(KEY)); \
+    } \
+  } \
+  break;
+
+INIT_NUMPAD(MC_P0)
+INIT_NUMPAD(MC_P1)
+INIT_NUMPAD(MC_P2)
+INIT_NUMPAD(MC_P3)
+INIT_NUMPAD(MC_P4)
+INIT_NUMPAD(MC_P5)
+INIT_NUMPAD(MC_P6)
+INIT_NUMPAD(MC_P7)
+INIT_NUMPAD(MC_P8)
+INIT_NUMPAD(MC_P9)
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-  if (keycode >= MC_P0 && keycode <= MC_P9) {
-    uint16_t numpad_number = keycode - MC_P0;
-    if (record->event.pressed) {
-      if ((keyboard_report->mods & MOD_BIT(KC_LSFT)) && numpad_shift_diff[numpad_number] != false) {
-        if (is_numpad_pressed[numpad_number][0]) {
-          //SEND_STRING(SS_UP(X_KP_7));
-          send_string(numpad_keymaps[numpad_number][0][1]);
-          is_numpad_pressed[numpad_number][0] = false;
+  switch(keycode) {
+    CASE_NUMPAD_2(MC_P0, X_KP_0)
+    CASE_NUMPAD_2(MC_P1, X_KP_1)
+    CASE_NUMPAD_2(MC_P2, X_KP_2)
+    CASE_NUMPAD_3(MC_P3, X_KP_3, X_KP_ENTER)
+    CASE_NUMPAD_2(MC_P4, X_KP_4)
+    CASE_NUMPAD_2(MC_P5, X_KP_5)
+    CASE_NUMPAD_3(MC_P6, X_KP_6, X_KP_PLUS)
+    CASE_NUMPAD_3(MC_P7, X_KP_7, X_KP_SLASH)
+    CASE_NUMPAD_3(MC_P8, X_KP_8, X_KP_ASTERISK)
+    CASE_NUMPAD_3(MC_P9, X_KP_9, X_KP_MINUS)
+    case MC_CP:
+      if (record->event.pressed) {
+        if (is_copied) {
+          SEND_STRING(SS_LCTRL("v"));
+        } else {
+          is_copied = true;
+          SEND_STRING(SS_LCTRL("c"));
         }
-        is_numpad_pressed[numpad_number][1] = true;
-        //SEND_STRING(SS_DOWN(X_KP_SLASH));
-        send_string(numpad_keymaps[numpad_number][1][0]);
-      } else {
-        if (is_numpad_pressed[numpad_number][1] && numpad_shift_diff[numpad_number] != false) {
-          //SEND_STRING(SS_UP(X_KP_SLASH));
-          send_string(numpad_keymaps[numpad_number][1][1]);
-          is_numpad_pressed[numpad_number][1] = false;
-        }
-        is_numpad_pressed[numpad_number][0] = true;
-        //SEND_STRING(SS_DOWN(X_KP_7));
-        send_string(numpad_keymaps[numpad_number][0][0]);
       }
-    } else {
-      if (is_numpad_pressed[numpad_number][1] && numpad_shift_diff[numpad_number] != false) {
-        is_numpad_pressed[numpad_number][1] = false;
-        //SEND_STRING(SS_UP(X_KP_SLASH));
-        send_string(numpad_keymaps[numpad_number][1][1]);
+      break;
+    case MO(1):
+      if (!record->event.pressed) {
+        is_copied = false;
       }
-      if (is_numpad_pressed[numpad_number][0]) {
-        is_numpad_pressed[numpad_number][0] = false;
-        //SEND_STRING(SS_UP(X_KP_7));
-        send_string(numpad_keymaps[numpad_number][0][1]);
-      }
-    }
-  } else {
-    switch(keycode) {
-      case MC_CP:
-        if (record->event.pressed) {
-          if (is_copied) {
-            SEND_STRING(SS_LCTRL("v"));
-          } else {
-            is_copied = true;
-            SEND_STRING(SS_LCTRL("c"));
-          }
-        }
-        break;
-      case MO(1):
-        if (!record->event.pressed) {
-          is_copied = false;
-        }
-    }
   }
   return true;
 };
