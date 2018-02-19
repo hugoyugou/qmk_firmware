@@ -96,15 +96,7 @@ bool is_copied = false;
 
 #define CASE_NUMPAD_2(MC_KEY, KEY) case MC_KEY: \
   if (record->event.pressed) { \
-    if ((keyboard_report->mods & MOD_BIT(KC_LSFT))) { \
-      if (is_ ## MC_KEY ## _pressed) { \
-        SEND_STRING(SS_UP(KEY)); \
-        is_ ## MC_KEY ## _pressed = false; \
-      } \
-    } else { \
-      if (is_ ## MC_KEY ## _shift_pressed) { \
-        is_ ## MC_KEY ## _shift_pressed = false; \
-      } \
+    if (!(keyboard_report->mods & MOD_BIT(KC_LSFT))) { \
       is_ ## MC_KEY ## _pressed = true; \
       SEND_STRING(SS_DOWN(KEY)); \
     } \
@@ -119,17 +111,9 @@ bool is_copied = false;
 #define CASE_NUMPAD_3(MC_KEY, KEY, SHIFT_KEY) case MC_KEY: \
   if (record->event.pressed) { \
     if ((keyboard_report->mods & MOD_BIT(KC_LSFT))) { \
-      if (is_ ## MC_KEY ## _pressed) { \
-        SEND_STRING(SS_UP(KEY)); \
-        is_ ## MC_KEY ## _pressed = false; \
-      } \
       is_ ## MC_KEY ## _shift_pressed = true; \
       SEND_STRING(SS_DOWN(SHIFT_KEY)); \
     } else { \
-      if (is_ ## MC_KEY ## _shift_pressed) { \
-        SEND_STRING(SS_UP(SHIFT_KEY)); \
-        is_ ## MC_KEY ## _shift_pressed = false; \
-      } \
       is_ ## MC_KEY ## _pressed = true; \
       SEND_STRING(SS_DOWN(KEY)); \
     } \

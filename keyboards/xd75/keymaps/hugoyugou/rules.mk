@@ -14,6 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 MOUSEKEY_ENABLE = yes
+NKRO_ENABLE = yes
 ifndef QUANTUM_DIR
 	include ../../../../Makefile
 endif
