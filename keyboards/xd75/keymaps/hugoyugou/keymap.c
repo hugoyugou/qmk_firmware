@@ -25,6 +25,11 @@
 #define OS_RCTL OSM(MOD_RCTL)
 #define LCTL_Z LCTL(KC_Z)
 #define LCTL_Y LCTL(KC_Y)
+#define RST_EN SS_LALT(SS_LSFT("1"))
+#define ALPHABET(SCOPE) SS_TAP(X_LSHIFT) SCOPE SS_TAP(X_LSHIFT)
+#define TO_HEAD SS_LCTRL("a") SS_TAP(X_LEFT)
+#define TO_TAIL SS_LCTRL("a") SS_TAP(X_RIGHT)
+#define STYLE(FORMAT) TO_HEAD FORMAT TO_TAIL FORMAT
 
 enum custom_keycodes {
     MC_P0 = SAFE_RANGE,
@@ -37,8 +42,20 @@ enum custom_keycodes {
     MC_P7,
     MC_P8,
     MC_P9,
-    MC_CP
+    MC_CP,
+    MC_ST,
+    MC_QU
 };
+
+enum input_methods {
+  IM_EN,
+  IM_ZHT,
+  IM_ZHS,
+  IM_JP,
+  IM_KR
+};
+
+uint16_t current_input_method = IM_EN;
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
@@ -52,7 +69,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
  * |--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------+--------------------------+--------|
  * | LSHIFT | /      | Z      | X      | C      | V      | B      | N      | M      | ,      | .      | UP     | P1     | P2     | P3 PEN |
  * |--------+--------+--------+--------+--------+-----------------+--------+--------+--------+--------+-----------------+--------+--------|
- * | LCTRL  | LGUI   | LALT   | SPACE  | FN     | DEL    | CTRLZ  | CTRLY  | [      | ]      | LEFT   | DOWN   | RIGHT  | 0      | P.     |
+ * | LCTRL  | LGUI   | LALT   | SPACE  | FN     | DEL    | STRIKE | QUOTE  | [      | ]      | LEFT   | DOWN   | RIGHT  | 0      | P.     |
  * '--------------------------------------------------------------------------------------------------------------------------------------'
  */
 
@@ -61,7 +78,7 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   { KC_GRV,  KC_Q,    KC_W,    KC_E,    KC_R,    KC_T,    KC_Y,    KC_U,    KC_I,    KC_O,    KC_P,    KC_BSPC, MC_P7,   MC_P8,   MC_P9   },
   { KC_TAB,  KC_A,    KC_S,    KC_D,    KC_F,    KC_G,    KC_H,    KC_J,    KC_K,    KC_L,    KC_SCLN, KC_QUOT, MC_P4,   MC_P5,   MC_P6   },
   { KC_LSFT, KC_SLSH, KC_Z,    KC_X,    KC_C,    KC_V,    KC_B,    KC_N,    KC_M,    KC_COMM, KC_DOT,  KC_UP  , MC_P1,   MC_P2,   MC_P3   },
-  { KC_LCTL, KC_LGUI, KC_LALT, KC_SPC,  MO(_FN), KC_DEL,  LCTL_Z,  LCTL_Y,  KC_LBRC, KC_RBRC, KC_LEFT, KC_DOWN, KC_RGHT, MC_P0,   KC_PDOT },
+  { KC_LCTL, KC_LGUI, KC_LALT, KC_SPC,  MO(_FN), KC_DEL,  MC_ST,   MC_QU,   KC_LBRC, KC_RBRC, KC_LEFT, KC_DOWN, KC_RGHT, MC_P0,   KC_PDOT },
  },
 
 /* FUNCTION
@@ -154,6 +171,15 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     CASE_NUMPAD_3(MC_P7, X_KP_7, X_KP_SLASH)
     CASE_NUMPAD_3(MC_P8, X_KP_8, X_KP_ASTERISK)
     CASE_NUMPAD_3(MC_P9, X_KP_9, X_KP_MINUS)
+    case KC_1:
+    case KC_2:
+    case KC_3:
+    case KC_4:
+    case KC_5:
+      if (record->event.pressed && (keyboard_report->mods & MOD_BIT(KC_LSFT)) && (keyboard_report->mods & MOD_BIT(KC_LALT))) {
+        current_input_method = keycode - KC_1;
+      }
+      break;
     case MC_CP:
       if (record->event.pressed) {
         if (is_copied) {
@@ -164,6 +190,24 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         }
       }
       break;
+    case MC_ST:
+      if (record->event.pressed) {
+        if (current_input_method == IM_JP) {
+          SEND_STRING(SS_LALT(SS_LSFT("1")) STYLE("~~") SS_LALT(SS_LSFT("4")));
+        } else {
+          SEND_STRING(ALPHABET(STYLE("~~")));
+        }
+      }
+      break;
+    case MC_QU:
+      if (record->event.pressed) {
+        if ((keyboard_report->mods & MOD_BIT(KC_LSFT))) {
+          SEND_STRING(ALPHABET(STYLE("```")));
+        } else {
+          SEND_STRING(ALPHABET(STYLE("`")));
+        }
+      }
+      break;
     case MO(1):
       if (!record->event.pressed) {
         is_copied = false;
@@ -171,3 +215,7 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
   }
   return true;
 };
+
+void matrix_scan_user(void) {
+  rgblight_setrgb(0, 0, 0);
+}
